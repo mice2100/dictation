@@ -8,21 +8,39 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
 <template>
     <v-container class="audio-player">
         <v-row>
-            <span>Speed: {{ playSpeed }}x</span>
             <span>{{ currentTime }} / {{ totalTime }}</span>
         </v-row>
         <v-row>
-            <v-btn @click="play">► Play</v-btn>
-            <v-btn @click="pause">❚❚ Pause</v-btn>
-            <v-btn @click="jumpToTime(prevTime)">Previous</v-btn>
-            <v-btn @click="jumpToTime(nextTime)">Next</v-btn>
-            <v-btn @click="changeSpeed(0.8)">0.8x</v-btn>
-            <v-btn @click="changeSpeed(1.0)">1.0x</v-btn>
-            <v-btn @click="changeSpeed(1.25)">1.25x</v-btn>
-            <v-btn @click="changeSpeed(1.5)">1.5x</v-btn>
+            <v-slider v-model="currentPos" :max="totalDuration" step="0.1"></v-slider>
         </v-row>
         <v-row>
-            <v-card>
+            <v-btn variant="outlined" size="large" @click="play" v-if="!isPlaying">► Play</v-btn>
+            <v-btn variant="outlined" size="large" @click="pause" v-else>❚❚ Pause</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(prevTime)">Prev</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(beginTime)">Rewind</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(nextTime)">Next</v-btn>
+            <v-select v-model="playSpeed" label="Speed" :items="['0.8', '1.0', '1.25', '1.5']"
+                variant="outlined"></v-select>
+            <v-switch v-model="showCaption" label="Show Caption"></v-switch>
+        </v-row>
+        <v-row>
+            <v-menu location="end">
+                <template v-slot:activator="{ props }">
+                    <v-btn color="primary" dark v-bind="props">
+                        {{ playSpeed }}
+                    </v-btn>
+                </template>
+
+                <v-list>
+                    <v-list-item v-for="(item, index) in ['0.8', '1.0', '1.25', '1.5']" :key="index">
+                        <v-list-item-title>{{ item }}</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+
+            </v-menu>
+        </v-row>
+        <v-row>
+            <v-card variant="tonal" v-if=showCaption>
                 <v-card-text>{{ currentSentence }}</v-card-text>
             </v-card>
         </v-row>
@@ -38,64 +56,99 @@ export default {
             totalTime: '0:00',
             playSpeed: 1.0,
             prevTime: 0,
+            beginTime: 0,
             nextTime: 0,
             sentences: [],
+            showCaption: false,
+            isPlaying: false,
+            totalDuration: 0,
+            currentPos: 0,
             currentSentence: ""
+        }
+    },
+    watch: {
+        playSpeed() {
+            this.changeSpeed()
+        },
+        currentPos() {
+            this.changePos()
         }
     },
     methods: {
         play() {
             this.audio.play()
+            this.isPlaying = true
         },
         pause() {
             this.audio.pause()
+            this.isPlaying = false
         },
         jumpToTime(time) {
             this.audio.currentTime = time
         },
-        changeSpeed(speed) {
-            this.audio.playbackRate = speed
-            this.playSpeed = speed
+        changeSpeed() {
+            this.audio.playbackRate = this.playSpeed
+        },
+        changePos() {
+            this.audio.currentTime = this.currentPos
         }
     },
     mounted() {
-        this.audio = new Audio("https://play.podtrac.com/npr-500005/edge1.pod.npr.org/anon.npr-mp3/npr/newscasts/2023/06/30/20230630_newscasts_long_180834.mp3")
+        this.audio = new Audio("mp3/edge1.pod.npr.org/anon.npr-mp3/npr/newscasts/2023/06/30/20230630_newscasts_long_180834.mp3")
         this.audio.load()
         // fetch a json file and store in object
         fetch("01.json").then(response => response.json()).then(json => {
+            let lastSentence = null
             for (let paragraph of json.paragraphs) {
                 for (let sentence of paragraph.sentences) {
+                    sentence.start = sentence.start.toFixed(4)
+                    sentence.end = sentence.end.toFixed(4)
+                    if (lastSentence) {
+                        lastSentence.end = sentence.start
+                    } else {
+                        sentence.start = 0
+                    }
+                    lastSentence = sentence
                     this.sentences.push(sentence)
                 }
             }
-            console.log(this.sentences)
+            // console.log(this.sentences)
         })
         //
         this.audio.addEventListener('loadedmetadata', () => {
+            this.totalDuration = this.audio.duration
             const totalTime = Math.floor(this.audio.duration)
             const totalMinutes = Math.floor(totalTime / 60)
-            const totalSeconds = 60
+            const totalSeconds = 0
             this.totalTime = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`
         })
         this.audio.addEventListener('timeupdate', () => {
-            const currentTime = Math.floor(this.audio.currentTime)
-            var time_start = 0
-            var time_end = 0
-            for (let sentence of this.sentences) {
-                if (sentence.start <= currentTime && currentTime <= sentence.end) {
+            // this.currentPos = this.audio.currentTime
+            const currentTime = this.audio.currentTime
+            for (let idx = 0; idx < this.sentences.length; idx++) {
+                const sentence = this.sentences[idx]
+                if (sentence.start <= currentTime && currentTime < sentence.end) {
+                    if (idx > 0) {
+                        this.prevTime = this.sentences[idx - 1].start
+                    } else {
+                        this.prevTime = 0
+                    }
+                    this.beginTime = sentence.start
+                    if (idx < this.sentences.length - 1) {
+                        const nextSentence = this.sentences[idx + 1]
+                        this.nextTime = nextSentence.start
+                    } else {
+                        this.nextTime = this.audio.duration
+                    }
                     this.currentSentence = sentence.text
-                    time_start = sentence.start
-                    time_end = sentence.end
+                    break
+                } else if (currentTime < sentence.start) {
                     break
                 }
             }
             const minutes = Math.floor(currentTime / 60)
-            const seconds = currentTime % 60
+            const seconds = Math.round(currentTime) % 60
             this.currentTime = `${minutes}:${seconds.toString().padStart(2, '0')}`
-
-            // Calculate previous and next time based on current time
-            this.prevTime = time_start
-            this.nextTime = time_end
         })
     }
 }
