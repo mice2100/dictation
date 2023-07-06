@@ -19,8 +19,6 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
             <v-btn variant="outlined" @click="jumpToTime(prevTime)">Prev</v-btn>
             <v-btn variant="outlined" @click="jumpToTime(beginTime)">Rewind</v-btn>
             <v-btn variant="outlined" @click="jumpToTime(nextTime)">Next</v-btn>
-            <v-select v-model="playSpeed" label="Speed" :items="['0.8', '1.0', '1.25', '1.5']"
-                variant="outlined"></v-select>
             <v-switch v-model="showCaption" label="Show Caption"></v-switch>
         </v-row>
         <v-row>
@@ -33,7 +31,7 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
 
                 <v-list>
                     <v-list-item v-for="(item, index) in ['0.8', '1.0', '1.25', '1.5']" :key="index">
-                        <v-list-item-title>{{ item }}</v-list-item-title>
+                        <v-list-item-title @click="changeSpeed(item)">{{ item }}</v-list-item-title>
                     </v-list-item>
                 </v-list>
 
@@ -67,9 +65,6 @@ export default {
         }
     },
     watch: {
-        playSpeed() {
-            this.changeSpeed()
-        },
         currentPos() {
             this.changePos()
         }
@@ -86,7 +81,8 @@ export default {
         jumpToTime(time) {
             this.audio.currentTime = time
         },
-        changeSpeed() {
+        changeSpeed(speed) {
+            this.playSpeed = speed
             this.audio.playbackRate = this.playSpeed
         },
         changePos() {
@@ -94,7 +90,7 @@ export default {
         }
     },
     mounted() {
-        this.audio = new Audio("mp3/edge1.pod.npr.org/anon.npr-mp3/npr/newscasts/2023/06/30/20230630_newscasts_long_180834.mp3")
+        this.audio = new Audio("https://play.podtrac.com/npr-500005/edge1.pod.npr.org/anon.npr-mp3/npr/newscasts/2023/07/05/20230705_newscasts_long_130834.mp3?p=500005&e=nsv2-1688576400000-s1-long&d=300&t=podcast&size=4480621&awCollectionId=500005&awEpisodeId=nsv2-1688576400000-s1-long")
         this.audio.load()
         // fetch a json file and store in object
         fetch("01.json").then(response => response.json()).then(json => {
