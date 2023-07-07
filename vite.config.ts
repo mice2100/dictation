@@ -1,7 +1,6 @@
 // Plugins
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
-import mkcert from 'vite-plugin-mkcert'
 
 // Utilities
 import { defineConfig } from 'vite'
@@ -20,7 +19,6 @@ export default defineConfig({
         configFile: 'src/styles/settings.scss',
       },
     }),
-    mkcert(),
   ],
   define: { 'process.env': {} },
   resolve: {
@@ -39,10 +37,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    https: true,
     proxy: {
-      '/mp3/': {
-        target: 'https://play.podtrac.com/',
+      '/npr': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     }

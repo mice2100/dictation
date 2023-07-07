@@ -6,22 +6,32 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
 -->
 
 <template>
-    <v-container class="audio-player">
+    <v-container class="audio-player pa-2">
+        <v-row align="center">
+            <v-btn variant="outlined" @click="next(-1)" :disabled="index <= 0">
+                <v-icon icon="mdi-skip-previous"></v-icon>Prev</v-btn>
+            <v-card-text>{{ caption }}</v-card-text>
+            <v-btn variant="outlined" @click="next(1)" :disabled="index >= nprnews.length - 1">
+                <v-icon icon="mdi-skip-next"></v-icon>Next</v-btn>
+        </v-row>
         <v-row>
             <span>{{ currentTime }} / {{ totalTime }}</span>
         </v-row>
         <v-row>
             <v-slider v-model="currentPos" :max="totalDuration" step="0.1"></v-slider>
         </v-row>
-        <v-row>
-            <v-btn variant="outlined" size="large" @click="play" v-if="!isPlaying">► Play</v-btn>
-            <v-btn variant="outlined" size="large" @click="pause" v-else>❚❚ Pause</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(prevTime)">Prev</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(beginTime)">Rewind</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(nextTime)">Next</v-btn>
-            <v-switch v-model="showCaption" label="Show Caption"></v-switch>
-        </v-row>
-        <v-row>
+        <v-row align="center">
+            <v-btn variant="outlined" color="primary" width="200" @click="play" v-if="!isPlaying">
+                <v-icon icon="mdi-play"></v-icon>Play</v-btn>
+            <v-btn variant="outlined" width="200" @click="pause" v-else>
+                <v-icon icon="mdi-pause"></v-icon>Pause</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(prevTime)">
+                <v-icon icon="mdi-rewind"></v-icon>Prev</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(beginTime)">
+                <v-icon icon="mdi-replay"></v-icon>Rewind</v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(nextTime)">
+                <v-icon icon="mdi-fast-forward"></v-icon>Next</v-btn>
+            <v-switch v-model="showCaption" hide-details inset label="Caption"></v-switch>
             <v-menu location="end">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" dark v-bind="props">
@@ -35,8 +45,7 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
                     </v-list-item>
                 </v-list>
 
-            </v-menu>
-        </v-row>
+            </v-menu> </v-row>
         <v-row>
             <v-card variant="tonal" v-if=showCaption>
                 <v-card-text>{{ currentSentence }}</v-card-text>
@@ -49,6 +58,9 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
 export default {
     data() {
         return {
+            nprnews: [],
+            index: -1,
+            caption: "",
             audio: null,
             currentTime: '0:00',
             totalTime: '0:00',
@@ -87,29 +99,37 @@ export default {
         },
         changePos() {
             this.audio.currentTime = this.currentPos
-        }
+        },
+        next(step = 1) {
+            if (!this.nprnews || this.nprnews.length == 0) return
+            this.index += step
+            if (this.index >= this.nprnews.length) {
+                this.index = 0
+            }
+            let news = this.nprnews[this.index]
+
+            fetch(`npr/get/${news.uid}`).then(response => response.json()).then(json => {
+                this.sentences = []
+                console.log(json)
+                for (let paragraph of json.transcript) {
+                    for (let sentence of paragraph.sentences) {
+                        this.sentences.push(sentence)
+                    }
+                }
+                console.log(this.sentences)
+            })
+            this.audio.src = news.audioUrl
+            this.audio.load()
+            this.caption = news.title
+            // this.audio.play()
+        },
     },
     mounted() {
-        this.audio = new Audio("https://play.podtrac.com/npr-500005/edge1.pod.npr.org/anon.npr-mp3/npr/newscasts/2023/07/05/20230705_newscasts_long_130834.mp3?p=500005&e=nsv2-1688576400000-s1-long&d=300&t=podcast&size=4480621&awCollectionId=500005&awEpisodeId=nsv2-1688576400000-s1-long")
-        this.audio.load()
-        // fetch a json file and store in object
-        fetch("01.json").then(response => response.json()).then(json => {
-            let lastSentence = null
-            for (let paragraph of json.paragraphs) {
-                for (let sentence of paragraph.sentences) {
-                    sentence.start = sentence.start.toFixed(4)
-                    sentence.end = sentence.end.toFixed(4)
-                    if (lastSentence) {
-                        lastSentence.end = sentence.start
-                    } else {
-                        sentence.start = 0
-                    }
-                    lastSentence = sentence
-                    this.sentences.push(sentence)
-                }
-            }
-            // console.log(this.sentences)
+        fetch('npr/list').then(response => response.json()).then(json => {
+            this.nprnews = json
+            this.next()
         })
+        this.audio = new Audio()
         //
         this.audio.addEventListener('loadedmetadata', () => {
             this.totalDuration = this.audio.duration
@@ -151,7 +171,7 @@ export default {
 </script>
 
 <style>
-.audio-player {
-    /* styles */
+* {
+    margin: 5px;
 }
 </style>
