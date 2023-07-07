@@ -23,9 +23,9 @@ export default defineConfig({
       },
       // includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'My Awesome App',
-        short_name: 'MyApp',
-        description: 'My Awesome App description',
+        name: 'NPRNews Dictation',
+        short_name: 'NPRNews Dictation',
+        description: 'Learn English from NPR News Dictation',
         theme_color: '#ffffff',
         icons: [
           {
