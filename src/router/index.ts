@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
-    path: '/',
+    path: import.meta.env.BASE_URL,
     component: () => import('@/layouts/default/Default.vue'),
     children: [
       {

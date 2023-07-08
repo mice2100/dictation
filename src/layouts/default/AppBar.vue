@@ -17,7 +17,6 @@ let deferredPrompt: any = null;
 
 console.log('Appbar.vue');
 onBeforeMount(() => {
-  console.log('Appbar.vue onBeforeMounted');
   window.addEventListener('beforeinstallprompt', (e) => {
     console.log('beforeinstallprompt fired');
     deferredPrompt = e;

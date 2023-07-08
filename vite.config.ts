@@ -10,6 +10,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/nprdict/',
   plugins: [
     vue({
       template: { transformAssetUrls }
@@ -17,11 +18,10 @@ export default defineConfig({
     mkcert(),
     VitePWA({
       mode: 'development',
-      registerType: 'autoUpdate', 
+      registerType: 'autoUpdate',
       devOptions: {
         enabled: true
       },
-      // includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'NPRNews Dictation',
         short_name: 'NPRNews Dictation',
@@ -29,12 +29,12 @@ export default defineConfig({
         theme_color: '#ffffff',
         icons: [
           {
-            src: 'pwa-192.png',
+            src: 'img/pwa-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512.png',
+            src: 'img/pwa-512.png',
             sizes: '512x512',
             type: 'image/png'
           }
@@ -68,7 +68,7 @@ export default defineConfig({
     port: 3000,
     https: true,
     proxy: {
-      '/npr': {
+      '/npreefe': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

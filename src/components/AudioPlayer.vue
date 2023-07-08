@@ -108,11 +108,13 @@ export default {
             }
             let news = this.nprnews[this.index]
 
-            fetch(`npr/get/${news.uid}`).then(response => response.json()).then(json => {
+            fetch(import.meta.env.VITE_API_PATH+`/get/${news.uid}`).then(response => response.json()).then(json => {
                 this.sentences = []
-                console.log(json)
+                let lastEndTime = 0
                 for (let paragraph of json.transcript) {
                     for (let sentence of paragraph.sentences) {
+                        sentence.startTime = lastEndTime
+                        lastEndTime = sentence.endTime
                         this.sentences.push(sentence)
                     }
                 }
@@ -125,7 +127,8 @@ export default {
         },
     },
     mounted() {
-        fetch('npr/list').then(response => response.json()).then(json => {
+        console.log(import.meta.env)
+        fetch(import.meta.env.VITE_API_PATH+'/list').then(response => response.json()).then(json => {
             this.nprnews = json
             this.next()
         })
@@ -145,14 +148,14 @@ export default {
                 const sentence = this.sentences[idx]
                 if (sentence.start <= currentTime && currentTime < sentence.end) {
                     if (idx > 0) {
-                        this.prevTime = this.sentences[idx - 1].start
+                        this.prevTime = this.sentences[idx - 1].start - 0.2
                     } else {
                         this.prevTime = 0
                     }
-                    this.beginTime = sentence.start
+                    this.beginTime = sentence.start - 0.2
                     if (idx < this.sentences.length - 1) {
                         const nextSentence = this.sentences[idx + 1]
-                        this.nextTime = nextSentence.start
+                        this.nextTime = nextSentence.start - 0.2
                     } else {
                         this.nextTime = this.audio.duration
                     }
@@ -171,7 +174,13 @@ export default {
 </script>
 
 <style>
-* {
-    margin: 5px;
+.v-main {
+        margin: 10px;
+}
+.v-row {
+    margin: 10px 10px 0 0;
+}
+.v-btn {
+    margin: 0 5px 0 0;
 }
 </style>
