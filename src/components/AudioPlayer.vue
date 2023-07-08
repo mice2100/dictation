@@ -18,7 +18,8 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
             <span>{{ currentTime }} / {{ totalTime }}</span>
         </v-row>
         <v-row>
-            <v-slider v-model="currentPos" @update:model-value="changePos()" :max="totalDuration"></v-slider>
+            <v-slider v-model="currentPos" @update:model-value="changePos()" :max="totalDuration" hide-details="true"
+                density="compact"></v-slider>
         </v-row>
         <v-row align="center">
             <v-switch v-model="showCaption" hide-details inset color="primary" label="Caption"></v-switch>
@@ -74,6 +75,7 @@ export default {
             beginTime: 0,
             nextTime: 0,
             sentences: [],
+            // aticks: [],
             showCaption: false,
             isPlaying: false,
             totalDuration: 0,
@@ -110,18 +112,23 @@ export default {
 
             fetch(import.meta.env.VITE_API_PATH + `/get/${news.uid}`).then(response => response.json()).then(json => {
                 this.sentences = []
+                // this.aticks = []
                 let lastEndTime = 0
+                // this.aticks.push(lastEndTime)
                 for (let paragraph of json.transcript) {
                     for (let sentence of paragraph.sentences) {
-                        sentence.startTime = lastEndTime
-                        lastEndTime = sentence.endTime
+                        sentence.start = lastEndTime
+                        lastEndTime = sentence.end
+                        // this.aticks.push(lastEndTime)
                         this.sentences.push(sentence)
                     }
                 }
-                console.log(this.sentences)
             })
             this.audio.src = news.audioUrl
             this.audio.load()
+            this.isPlaying = false
+            this.currentPos = 0
+
             this.caption = news.title
             // this.audio.play()
         },
@@ -146,14 +153,14 @@ export default {
                 const sentence = this.sentences[idx]
                 if (sentence.start <= currentTime && currentTime < sentence.end) {
                     if (idx > 0) {
-                        this.prevTime = this.sentences[idx - 1].start - 0.2
+                        this.prevTime = this.sentences[idx - 1].start
                     } else {
                         this.prevTime = 0
                     }
-                    this.beginTime = sentence.start - 0.2
+                    this.beginTime = sentence.start
                     if (idx < this.sentences.length - 1) {
                         const nextSentence = this.sentences[idx + 1]
-                        this.nextTime = nextSentence.start - 0.2
+                        this.nextTime = nextSentence.start
                     } else {
                         this.nextTime = this.audio.duration
                     }
