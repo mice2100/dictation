@@ -18,8 +18,7 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
             <span>{{ currentTime }} / {{ totalTime }}</span>
         </v-row>
         <v-row>
-            <v-slider v-model="currentPos" @update:modelValue="changePos($event)" :max="totalDuration"
-                step="0.1"></v-slider>
+            <v-slider v-model="currentPos" @update:model-value="changePos()" :max="totalDuration"></v-slider>
         </v-row>
         <v-row align="center">
             <v-switch v-model="showCaption" hide-details inset color="primary" label="Caption"></v-switch>
@@ -44,10 +43,10 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
                 <v-icon icon="mdi-play"></v-icon></v-btn>
             <v-btn variant="outlined" width="160" @click="pause" v-else>
                 <v-icon icon="mdi-pause"></v-icon></v-btn>
+            <v-btn variant="outlined" width="90" @click="jumpToTime(beginTime)">
+                <v-icon icon="mdi-replay"></v-icon></v-btn>
             <v-btn variant="outlined" @click="jumpToTime(prevTime)">
                 <v-icon icon="mdi-rewind"></v-icon></v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(beginTime)">
-                <v-icon icon="mdi-replay"></v-icon></v-btn>
             <v-btn variant="outlined" @click="jumpToTime(nextTime)">
                 <v-icon icon="mdi-fast-forward"></v-icon></v-btn>
         </v-row>
@@ -82,11 +81,6 @@ export default {
             currentSentence: ""
         }
     },
-    watch: {
-        // currentPos() {
-        //     this.changePos()
-        // }
-    },
     methods: {
         play() {
             this.audio.play()
@@ -103,8 +97,8 @@ export default {
             this.playSpeed = speed
             this.audio.playbackRate = parseFloat(this.playSpeed)
         },
-        changePos(value) {
-            this.audio.currentTime = value
+        changePos() {
+            this.audio.currentTime = this.currentPos
         },
         next(step = 1) {
             if (!this.nprnews || this.nprnews.length == 0) return
@@ -140,14 +134,13 @@ export default {
         this.audio = new Audio()
         //
         this.audio.addEventListener('loadedmetadata', () => {
-            this.totalDuration = this.audio.duration
+            this.totalDuration = Math.round(this.audio.duration)
             const totalTime = this.audio.duration
             const totalMinutes = Math.floor(totalTime / 60)
             const totalSeconds = Math.round(totalTime % 60)
             this.totalTime = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`
         })
         this.audio.addEventListener('timeupdate', () => {
-            this.currentPos = this.audio.currentTime
             const currentTime = this.audio.currentTime
             for (let idx = 0; idx < this.sentences.length; idx++) {
                 const sentence = this.sentences[idx]
@@ -173,6 +166,7 @@ export default {
             const minutes = Math.floor(currentTime / 60)
             const seconds = Math.round(currentTime % 60)
             this.currentTime = `${minutes}:${seconds.toString().padStart(2, '0')}`
+            this.currentPos = Math.round(currentTime)
         })
         this.audio.addEventListener('ended', () => {
             if (this.repeat) {
