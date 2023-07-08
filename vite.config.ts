@@ -22,6 +22,9 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png}', '**/assets/*.*']
+      },
       manifest: {
         name: 'NPRNews Dictation',
         short_name: 'NPRNews Dictation',
@@ -65,6 +68,7 @@ export default defineConfig({
     ],
   },
   server: {
+    host: true,
     port: 3000,
     https: true,
     proxy: {

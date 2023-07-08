@@ -9,29 +9,22 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
     <v-container class="audio-player pa-2">
         <v-row align="center">
             <v-btn variant="outlined" @click="next(-1)" :disabled="index <= 0">
-                <v-icon icon="mdi-skip-previous"></v-icon>Prev</v-btn>
+                <v-icon icon="mdi-skip-previous"></v-icon></v-btn>
             <v-card-text>{{ caption }}</v-card-text>
             <v-btn variant="outlined" @click="next(1)" :disabled="index >= nprnews.length - 1">
-                <v-icon icon="mdi-skip-next"></v-icon>Next</v-btn>
+                <v-icon icon="mdi-skip-next"></v-icon></v-btn>
         </v-row>
         <v-row>
             <span>{{ currentTime }} / {{ totalTime }}</span>
         </v-row>
         <v-row>
-            <v-slider v-model="currentPos" :max="totalDuration" step="0.1"></v-slider>
+            <v-slider v-model="currentPos" @update:modelValue="changePos($event)" :max="totalDuration"
+                step="0.1"></v-slider>
         </v-row>
         <v-row align="center">
-            <v-btn variant="outlined" color="primary" width="200" @click="play" v-if="!isPlaying">
-                <v-icon icon="mdi-play"></v-icon>Play</v-btn>
-            <v-btn variant="outlined" width="200" @click="pause" v-else>
-                <v-icon icon="mdi-pause"></v-icon>Pause</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(prevTime)">
-                <v-icon icon="mdi-rewind"></v-icon>Prev</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(beginTime)">
-                <v-icon icon="mdi-replay"></v-icon>Rewind</v-btn>
-            <v-btn variant="outlined" @click="jumpToTime(nextTime)">
-                <v-icon icon="mdi-fast-forward"></v-icon>Next</v-btn>
-            <v-switch v-model="showCaption" hide-details inset label="Caption"></v-switch>
+            <v-switch v-model="showCaption" hide-details inset color="primary" label="Caption"></v-switch>
+            <v-switch v-model="repeat" hide-details inset color="primary" label="Repeat"></v-switch>
+
             <v-menu location="end">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" dark v-bind="props">
@@ -40,12 +33,24 @@ add buttons to change speed: 0.8, 1.0, 1.25, 1.5
                 </template>
 
                 <v-list>
-                    <v-list-item v-for="(item, index) in ['0.8', '1.0', '1.25', '1.5']" :key="index">
+                    <v-list-item v-for="(item, index) in ['0.8x', '1.0x', '1.25x', '1.5x']" :key="index">
                         <v-list-item-title @click="changeSpeed(item)">{{ item }}</v-list-item-title>
                     </v-list-item>
                 </v-list>
-
-            </v-menu> </v-row>
+            </v-menu>
+        </v-row>
+        <v-row align="center">
+            <v-btn variant="outlined" color="primary" width="160" @click="play" v-if="!isPlaying">
+                <v-icon icon="mdi-play"></v-icon></v-btn>
+            <v-btn variant="outlined" width="160" @click="pause" v-else>
+                <v-icon icon="mdi-pause"></v-icon></v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(prevTime)">
+                <v-icon icon="mdi-rewind"></v-icon></v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(beginTime)">
+                <v-icon icon="mdi-replay"></v-icon></v-btn>
+            <v-btn variant="outlined" @click="jumpToTime(nextTime)">
+                <v-icon icon="mdi-fast-forward"></v-icon></v-btn>
+        </v-row>
         <v-row>
             <v-card variant="tonal" v-if=showCaption>
                 <v-card-text>{{ currentSentence }}</v-card-text>
@@ -60,11 +65,12 @@ export default {
         return {
             nprnews: [],
             index: -1,
+            repeat: true,
             caption: "",
             audio: null,
             currentTime: '0:00',
             totalTime: '0:00',
-            playSpeed: 1.0,
+            playSpeed: "1.0x",
             prevTime: 0,
             beginTime: 0,
             nextTime: 0,
@@ -77,9 +83,9 @@ export default {
         }
     },
     watch: {
-        currentPos() {
-            this.changePos()
-        }
+        // currentPos() {
+        //     this.changePos()
+        // }
     },
     methods: {
         play() {
@@ -95,10 +101,10 @@ export default {
         },
         changeSpeed(speed) {
             this.playSpeed = speed
-            this.audio.playbackRate = this.playSpeed
+            this.audio.playbackRate = parseFloat(this.playSpeed)
         },
-        changePos() {
-            this.audio.currentTime = this.currentPos
+        changePos(value) {
+            this.audio.currentTime = value
         },
         next(step = 1) {
             if (!this.nprnews || this.nprnews.length == 0) return
@@ -108,7 +114,7 @@ export default {
             }
             let news = this.nprnews[this.index]
 
-            fetch(import.meta.env.VITE_API_PATH+`/get/${news.uid}`).then(response => response.json()).then(json => {
+            fetch(import.meta.env.VITE_API_PATH + `/get/${news.uid}`).then(response => response.json()).then(json => {
                 this.sentences = []
                 let lastEndTime = 0
                 for (let paragraph of json.transcript) {
@@ -127,8 +133,7 @@ export default {
         },
     },
     mounted() {
-        console.log(import.meta.env)
-        fetch(import.meta.env.VITE_API_PATH+'/list').then(response => response.json()).then(json => {
+        fetch(import.meta.env.VITE_API_PATH + '/list').then(response => response.json()).then(json => {
             this.nprnews = json
             this.next()
         })
@@ -136,13 +141,13 @@ export default {
         //
         this.audio.addEventListener('loadedmetadata', () => {
             this.totalDuration = this.audio.duration
-            const totalTime = Math.floor(this.audio.duration)
+            const totalTime = this.audio.duration
             const totalMinutes = Math.floor(totalTime / 60)
-            const totalSeconds = 0
+            const totalSeconds = Math.round(totalTime % 60)
             this.totalTime = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`
         })
         this.audio.addEventListener('timeupdate', () => {
-            // this.currentPos = this.audio.currentTime
+            this.currentPos = this.audio.currentTime
             const currentTime = this.audio.currentTime
             for (let idx = 0; idx < this.sentences.length; idx++) {
                 const sentence = this.sentences[idx]
@@ -166,8 +171,13 @@ export default {
                 }
             }
             const minutes = Math.floor(currentTime / 60)
-            const seconds = Math.round(currentTime) % 60
+            const seconds = Math.round(currentTime % 60)
             this.currentTime = `${minutes}:${seconds.toString().padStart(2, '0')}`
+        })
+        this.audio.addEventListener('ended', () => {
+            if (this.repeat) {
+                this.audio.play()
+            }
         })
     }
 }
@@ -175,11 +185,13 @@ export default {
 
 <style>
 .v-main {
-        margin: 10px;
+    margin: 10px;
 }
+
 .v-row {
     margin: 10px 10px 0 0;
 }
+
 .v-btn {
     margin: 0 5px 0 0;
 }
