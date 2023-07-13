@@ -146,6 +146,7 @@ export default {
             const totalMinutes = Math.floor(totalTime / 60)
             const totalSeconds = Math.round(totalTime % 60)
             this.totalTime = `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`
+            this.audio.playbackRate = parseFloat(this.playSpeed)
         })
         this.audio.addEventListener('timeupdate', () => {
             const currentTime = this.audio.currentTime
